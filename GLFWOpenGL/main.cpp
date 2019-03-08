@@ -8,34 +8,21 @@
 // GLFW
 #include <GLFW/glfw3.h>
 
+// shader.h
+#include "shader.h"
+
 const GLint WIDTH = 800, HEIGHT = 600;
-
-// Vertex Shader
-const GLchar* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 position;\n"
-"void main()\n"
-"{\n"
-"gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
-"}\0";
-
-// Fragment Shader
-const GLchar* fragmentShaderSource = "#version 330 core\n"
-"out vec4 color;\n"
-"void main()\n"
-"{\n"
-"color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-"}\n\0";
 
 // Main 
 int main()
 {
 	glfwInit();
 	// Windows Hints (Parameters of our window)
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);            	// OpenGL 3.3
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // OpenGL Core Profile
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // OpenGL Compatibility
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);					    // OpenGL Windows resizable ?
 
 	// Window object that we can use with GLFW's functions
 	GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL Window", nullptr, nullptr);
@@ -62,80 +49,34 @@ int main()
 	
 	glViewport(0, 0, screenWidth, screenHeight);
 
-	// Define shader
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-
-	// Compile Shader
-	glCompileShader(vertexShader);
-	// Compile error
-	GLint success;
-	// Compile logs (buffer)
-	GLchar infoLog[512];
-
-	// Returns compilation status and values of parameters
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-	if(!success)
-	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	// Define fragment shader (same process as vertex shader)
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	// Link shader (attach our shaders to shaderProgram)
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	// Check for link errors
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	// Generating error logs 
-	if (!success)
-	{
-		glGetShaderInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-	}
-
-	// Now they're part of the program we can delete those shaders.
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	Shader ourShader("core.vs", "core.frag");
 
 	// Setup vertex data and attributes pointers
 	GLfloat vertices[] =
 	{
-		-0.5f, -0.5f, 0.0f,		// Left
-		0.5f, -0.5f, 0.0f,		// Right
-		0.0f, 0.5f, 0.0f		// Top
+		// Positions           // Colors
+		0.5f, -0.5f, 0.0f,      1.0f, 0.0f, 0.0f,   // Bottom Right
+		-0.5f, -0.5f, 0.0f,     0.0f, 1.0f, 0.0f,   // Bottom Left
+		0.0f, 0.5f, 0.0f,       0.0f, 0.0f, 1.0f    // Top
 	};
 
 	// Creation of Vertex Buffer Object and Vertex Array Object
 	GLuint VBO, VAO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
-	// Bind VAO
 	glBindVertexArray(VAO);
-	// Bind VBO
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// Set vertex data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	// Attrib pointer
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid *)0);
 	glEnableVertexAttribArray(0);
-	// unbind buffer and VA
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// Color attribute | 6 * sizeof(GLfloat) -> 6 means 2 values for each vertex
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid *)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+	// unbind VA
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
 	//Window loop
@@ -149,7 +90,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Tell the program to use our shader program
-		glUseProgram(shaderProgram);
+		ourShader.Use();
 		// Bind VAO in order to draw arrays
 		glBindVertexArray(VAO);
 		// Draw them
