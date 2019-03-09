@@ -33,5 +33,7 @@
   <ItemGroup>
     <None Include="core.vs" />
     <None Include="core.frag" />
+    <None Include="glew32.dll" />
+    <None Include="glfw3.dll" />
   </ItemGroup>
 </Project>
