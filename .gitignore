@@ -23,7 +23,7 @@ bld/
 [Ll]og/
 
 #External Libraries
-External\ Libraries/
+ext-libs/
 
 # Visual Studio 2015 cache/options directory
 .vs/
